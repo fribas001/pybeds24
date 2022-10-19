@@ -21,8 +21,20 @@ from google.oauth2 import service_account
 from datetime import datetime
 from datetime import timedelta, date
 
+credss = { 
+  "type": "service_account",
+  "project_id": "python-scripts-api",
+  "private_key_id": "51aec328246da37b38bde50413727fa581f3c56e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCvIcsgZ3+zA3H3\n29fbknAjaWvYAuX2PSbc8zOwo5I9hWBG2q6JM5Xm07Ui+604ov9SotwqrZ8rFAiV\nBJx82w94RVYY4FKoYPK3Hh3Ra9cCOHIXiPvZUGoGPMHZi//k3vXX+LeJpyihvOFi\nSEer0inbGHccPnkOg69k5zC8Djir/Ua3KjeCf38tncv/Ub8Levo1T1DoHEPvqKu9\n6FQJEi5J7d2nTnaaNVYIPesywWNGBH004p5GjxoJReNYxvsnGiiJPQdr/ZRJHjif\ngd0H9KXLVBi0UR+thmlf2Yl7pxvmkkXS2aBItPcSF3NyH6FNsdiBTAJsdSToXMm4\nm5eRz76vAgMBAAECggEAPYrMjKiSMWAGjqkMo7ZD/c2v/gqWsP8wRviXs3zniQLz\noDJ8nu4nwSOoRZDXgE2XF3zvjXfRtRunIGasbxuzxfnnlXpO0aiv4jWNGOiid79K\nKIcUqXsepu522HHgDJdlIO3f4VmCZ8OuGBF6TiDeYIWqZZx2gek4m2a6s3rz40va\nqZgZn33pF2m9xcaRJZjWzjuvoMISL+sakWS5GUs2EdVx4i6ndQ9ljJ0l4lBMvB8g\nMKqSyUbK2MOsizhE7CJ9aNLtqa2lKbvAM5Uxn0N2BpQT0/B1HTOcAD1RRgRtJaxb\nDqDeKizLGj3TSOYyZE2yF2ZC6orVUzEpNAILq6COEQKBgQDe0SaX1ZfWjTAyewZW\nrk6D8LpQJtiwFTXp/2/hOu7hETJo59d2JZYPlc/ccGh8PPPxBDwsOaKmaXL8K4un\nTJK4/Iwjvt+vdBFF+ESR5EhuojSmIEzffR1THbyUI28g+m9Y5113ZfLZmQ4uYZRj\nmd3cBpRtitallD9GrV6gZBuMfQKBgQDJNqm0Wwe16Bgr8PXOAZnLOefAY4P5B9qH\nn9fF88Xj8SxaRh4IqYv4nPOkuBiptxjnQQx+8lbJC0lzeNsEezpAcqdYsrRk8G4a\nE+pgoepciC9n0Vnl/4lrw4Kbn8lRtus5/KBpPEZ94YQEaAKF3I5Oot0sEkPnavyJ\noj7QefqbmwKBgHg/9g0RZ/2RewZzYKtdLOCGBXcGUAFPoSYlBhNOw+bRahw1qxGH\nHWJR3rlALROHrbtQJs1TWZVn6XdwZNEoQTL2kQcllwDQqhXR8+eshO64OaPCYNpo\nYnAd500nhm0M2xTm4Il0isimkoGzheru+k4peudXe5om1LNnE1+KR1fdAoGAFNNK\nhzcwuhwWfF3JIxQ5VbZdjST/oMO2U3kwvPU5ExmADKvbKexaZ1XfRbokG1SvCChM\nYcs1PkOjy4bDrFgQtGDpfx2n3BaiXqKXDH9VoVQbC/S4CD0FfRjUKMVF8eYrvGmw\nNJQfe6HepxIYyMAGHo9ussQFMSt6jcg0FiG51WcCgYAcRQDRepvC+E80p44Oegt5\nGE2XNuiRab6XXujZfjIv3m0ra38vLZrGWEr9VYddXbj/pOc1QnObu0W4+ZUDkjOz\nvDdf5F82DUZWoPEPsWifgAziomSKCw42T7O375Ivz8/dBs9eiQIAosnaXVMdFdLz\njx7r0gp4Oa7grHFj0t6BFA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "somename@python-scripts-api.iam.gserviceaccount.com",
+  "client_id": "115249627758317174369",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/somename%40python-scripts-api.iam.gserviceaccount.com"}
+
 def Beds24Bookings():
-    
+
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
     #SCOPES = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
     SERVICE_ACCOUNT_FILE = 'credentials.json'
@@ -37,7 +49,7 @@ def Beds24Bookings():
     SAMPLE_SPREADSHEET_ID = '1UM8WFuu8lRvYeBsID5dZu10-t-RWYyptnGA9OIXk2ao'
     SAMPLE_SPREADSHEET_ID_BEDS24 = '1xk-3uZXcL3jA3Fqpj3g3SdVebTVuzCoUN7zqgOEvOO0'
 
-    service = build('sheets', 'v4', credentials=creds)
+    service = build('sheets', 'v4', credentials=credss)
 
     # Call the Sheets API
     sheet = service.spreadsheets().values()
