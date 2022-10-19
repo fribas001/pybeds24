@@ -1,0 +1,637 @@
+#from playwright.sync_api import sync_playwright
+import time
+import json
+import requests
+import random
+import re
+import calendar
+import pandas
+
+#import google.auth
+#import gspread
+#from oauth2client.service_account import ServiceAccountCredentials
+
+#from bs4 import BeautifulSoup
+from collections import defaultdict
+from random import randrange
+
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
+
+from datetime import datetime
+from datetime import timedelta, date
+
+def Beds24Bookings():
+    
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+    #SCOPES = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
+    SERVICE_ACCOUNT_FILE = 'credentials.json'
+
+    creds = None
+    creds = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+    # If modifying these scopes, delete the file token.json.
+
+    # The ID and range of a sample spreadsheet.
+    SAMPLE_SPREADSHEET_ID = '1UM8WFuu8lRvYeBsID5dZu10-t-RWYyptnGA9OIXk2ao'
+    SAMPLE_SPREADSHEET_ID_BEDS24 = '1xk-3uZXcL3jA3Fqpj3g3SdVebTVuzCoUN7zqgOEvOO0'
+
+    service = build('sheets', 'v4', credentials=creds)
+
+    # Call the Sheets API
+    sheet = service.spreadsheets().values()
+    sheet_beds24 = service.spreadsheets().values()
+    
+    ##################
+
+    #client = gspread.authorize(creds)
+    #sheet_test = client.open("BEDS24 - PYTHON").Bookings 
+
+    result = sheet.get(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Booking_test!B2:B").execute()
+    values = result.get('values', [])
+    bookings_list = [item for sublist in values for item in sublist]
+    
+    result_cancel = sheet.get(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Cancelamentos_test!B2:B").execute()
+    values_cancel = result_cancel.get('values', [])
+    canceled_list = [item for sublist in values_cancel for item in sublist]
+    
+    result_fractions = sheet.get(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="fractions_test!B2:B").execute()
+    values_fractions = result_fractions.get('values', [])
+    fractions_list = [item for sublist in values_fractions for item in sublist]
+    
+    result_moloni = sheet.get(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Moloni!B2:B").execute()
+    values_moloni = result_moloni.get('values', [])
+    moloni_list = [item for sublist in values_moloni for item in sublist]
+
+    ###################
+    
+    result_beds24 = sheet_beds24.get(spreadsheetId=SAMPLE_SPREADSHEET_ID_BEDS24,range="PROPRIEDADES!A2:AG").execute()
+    values_beds24 = result_beds24.get('values', [])
+    flat_list_beds24_aps = [item for sublist in values_beds24 for item in sublist]
+    
+    print(values_beds24)
+    
+    result_beds24_propID = sheet_beds24.get(spreadsheetId=SAMPLE_SPREADSHEET_ID_BEDS24,range="PROPRIEDADES!B2:B").execute()
+    values_beds24_propID = result_beds24_propID.get('values', [])
+    flat_list_beds24_propID = [item for sublist in values_beds24_propID for item in sublist]
+    
+    #service.spreadsheets().batchUpdate(body=requests_sort_rows, spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
+    
+    #################### FOR LOOP
+    
+    BOOKING_POST = []
+    CANCELAMENTOS_POST = []
+    FRACTIONS_POST = []
+    
+    for index, l in enumerate(flat_list_beds24_propID):
+        
+        
+        
+        #try:
+            
+            time.sleep (1)
+            Apartamento = values_beds24[index][0]
+            print("Apartament: " + Apartamento)
+            
+            LatLong = str(values_beds24[index][10]) + "," + str(values_beds24[index][11])
+            City = values_beds24[index][6]
+            Cover_pic = values_beds24[index][23]
+            Cleanning_fee = float(values_beds24[index][25].split("€")[1])
+            
+            PROP_KEY = str(l)*3
+            print(PROP_KEY)
+            
+            payload = {"authentication": {"apiKey": "131736176316351563","propKey": PROP_KEY},"arrivalFrom": "20220801"} 
+                
+            # payload = {
+            # "authentication": {
+            # "apiKey": "131736176316351563",
+            # "propKey": PROP_KEY
+            # },
+            # "arrivalFrom": "20220801"
+            # ##"arrivalTo": "20221231"
+            # }
+                        
+            url = "https://www.beds24.com/api/json/getBookings"
+            r = requests.post(url, json=payload)
+            res = r.json()
+                            
+            print(len(res))
+            
+            
+            
+                
+            for b in range(0,len(res)):
+                
+                #result = sheet.get(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Booking_test!B2:B").execute()
+                #values = result.get('values', [])
+                #bookings_list = [item for sublist in values for item in sublist]
+                #time.sleep (3)
+                
+                try:
+                
+                    bookId = "a" + res[b]["bookId"]
+                    roomId = res[b]["roomId"]
+                    unitId = res[b]["unitId"]
+                    roomQty = res[b]["roomQty"]
+                    status = res[b]["status"]
+                    substatus = res[b]["substatus"]
+                    firstNight = res[b]["firstNight"]
+                    lastNight = res[b]["lastNight"]
+                    numAdult = res[b]["numAdult"]
+                    numChild = res[b]["numChild"]
+                    guestTitle = res[b]["guestTitle"]
+                    guestFirstName = res[b]["guestFirstName"]
+                    guestName = res[b]["guestName"]
+                    guestEmail = res[b]["guestEmail"]
+                    guestPhone = "tel " + res[b]["guestPhone"]
+                    guestMobile = "tel " + res[b]["guestMobile"]
+                    guestFax = "tel " + res[b]["guestFax"]
+                    guestCompany = res[b]["guestCompany"]
+                    guestAddress = res[b]["guestAddress"]
+                    guestCity = res[b]["guestCity"]
+                    guestState = res[b]["guestState"]
+                    guestPostcode = res[b]["guestPostcode"]
+                    guestCountry = res[b]["guestCountry"]
+                    guestCountry2 = res[b]["guestCountry2"]
+                    guestArrivalTime = res[b]["guestArrivalTime"]
+                    guestVoucher = res[b]["guestVoucher"]
+                    guestComments = res[b]["guestComments"]
+                    notes = res[b]["notes"]
+                    message = res[b]["message"]
+                    groupNote = res[b]["groupNote"]
+                    custom1 = res[b]["custom1"]
+                    custom2 = res[b]["custom2"]
+                    custom3 = res[b]["custom3"]
+                    custom4 = res[b]["custom4"]
+                    custom5 = res[b]["custom5"]
+                    custom6 = res[b]["custom6"]
+                    custom7 = res[b]["custom7"]
+                    custom8 = res[b]["custom8"]
+                    custom9 = res[b]["custom9"]
+                    custom10 = res[b]["custom10"]
+                    flagColor = res[b]["flagColor"]
+                    flagText = res[b]["flagText"]
+                    statusCode = res[b]["statusCode"]
+                    lang = res[b]["lang"]
+                    price = float(res[b]["price"])
+                    deposit = float(res[b]["deposit"])
+                    tax = float(res[b]["tax"])
+                    commission = float(res[b]["commission"])
+                    currency = res[b]["currency"]
+                    rateDescription = res[b]["rateDescription"]
+                    offerId = res[b]["offerId"]
+                    referer = res[b]["referer"]
+                    refererEditable = res[b]["refererEditable"]
+                    reference = res[b]["reference"]
+                    apiSource = res[b]["apiSource"]
+                    apiReference = res[b]["apiReference"]
+                    apiMessage = res[b]["apiMessage"]
+                    allowChannelUpdate = res[b]["allowChannelUpdate"]
+                    allowAutoAction = res[b]["allowAutoAction"]
+                    allowReview = res[b]["allowReview"]
+                    cancelUntil = res[b]["cancelUntil"]
+                    stripeToken = res[b]["stripeToken"]
+                    propId = "a" + res[b]["propId"]
+                    ownerId = res[b]["ownerId"]
+                    invoiceeId = res[b]["invoiceeId"]
+                    bookingTime = res[b]["bookingTime"]
+                    modified = res[b]["modified"]
+                    cancelTime = res[b]["cancelTime"]
+                    masterId = res[b]["masterId"]
+                    
+                    firstNight_parsed = firstNight.split("-")
+                    lastNight_parsed = lastNight.split("-")
+                    
+                    checkIn = date(int(firstNight_parsed[0]), int(firstNight_parsed[1]), int(firstNight_parsed[2]))
+                    checkOut = str(date(int(lastNight_parsed[0]), int(lastNight_parsed[1]), int(lastNight_parsed[2])) + timedelta(days=1))
+                    print(checkOut)
+                    
+                    checkOut_parsed = checkOut.split("-")
+                    
+                    nights = ((date(int(checkOut_parsed[0]), int(checkOut_parsed[1]), int(checkOut_parsed[2]))) - (checkIn)).days
+                    #nights = ((date(int(lastNight_parsed[0]), int(lastNight_parsed[1]), int(lastNight_parsed[2]))) - (checkIn)).days
+                    print("Nights " + str(nights))
+                    
+                    if tax == 0:
+                        Fee_difference = price - Cleanning_fee
+                    else:
+                        Fee_difference = price
+                    
+                    
+                    ROW = [
+
+                    Apartamento,
+                    bookId,
+                    roomId,
+                    unitId,
+                    roomQty,
+                    status,
+                    substatus,
+                    firstNight,
+                    lastNight,
+                    numAdult,
+                    numChild,
+                    guestTitle,
+                    guestFirstName,
+                    guestName,
+                    guestEmail,
+                    guestPhone,
+                    guestMobile,
+                    guestFax,
+                    guestCompany,
+                    guestAddress,
+                    guestCity,
+                    guestState,
+                    guestPostcode,
+                    guestCountry,
+                    guestCountry2,
+                    guestArrivalTime,
+                    "guestVoucher",
+                    "guestComments",
+                    "notes",
+                    message,
+                    groupNote,
+                    custom1,
+                    custom2,
+                    custom3,
+                    custom4,
+                    custom5,
+                    custom6,
+                    custom7,
+                    custom8,
+                    custom9,
+                    custom10,
+                    flagColor,
+                    flagText,
+                    statusCode,
+                    lang,
+                    price,
+                    deposit,
+                    tax,
+                    commission,
+                    currency,
+                    "rateDescription",
+                    offerId,
+                    referer,
+                    refererEditable,
+                    reference,
+                    apiSource,
+                    apiReference,
+                    "apiMessage",
+                    allowChannelUpdate,
+                    allowAutoAction,
+                    allowReview,
+                    cancelUntil,
+                    stripeToken,
+                    propId,
+                    ownerId,
+                    invoiceeId,
+                    bookingTime,
+                    modified,
+                    cancelTime,
+                    masterId,
+                    "",
+                    "",
+                    checkOut,
+                    nights,
+                    LatLong,
+                    City,
+                    Cover_pic,
+                    Cleanning_fee,
+                    Fee_difference
+
+                    ] 
+                    
+                
+                    if status == "3":
+                        print("Status 3, pass")
+                        continue
+                    
+                    ############## RESERVAS CANCELADAS
+                    
+                    if status == "0":
+                        print("Reserva cancelada")
+                        
+                        #if bookId in canceled_list:
+                            #print(Apartamento + " Already posted in cancelamentos")
+                            #continue
+                        
+                        CANCELAMENTOS_POST.append(ROW)
+
+                    else:
+                        
+                        ######### BOOKINGS ALREADY IN LIST
+                        
+                        #if bookId in bookings_list:
+                            
+                            ########## SKIP UPDATES
+                         #   print(bookId + " Already in the list")
+                          #  continue
+                            
+                            
+                        ######### NO UPDATES, APPEND ROW TO BOOKINGS TABLE
+                        
+                        BOOKING_POST.append(ROW)
+
+                        ####### booking FRACTIONS
+                        
+                        if status == "4":
+                            print ("Status 4 - Not going to fractions")
+                            continue
+                        
+                        #if bookId in fractions_list:
+                            #print(bookId + " already in booking fractions list")
+                            #continue
+                        
+                        Year_to_check = firstNight.split("-")[0]
+                        Month_to_check = firstNight.split("-")[1]
+                        Day_to_check = firstNight.split("-")[2]
+                        
+                        Number_days_thisMonth = calendar.monthrange(int(Year_to_check), int(Month_to_check))[1]
+                        Days_to_EndMonth = Number_days_thisMonth - int(Day_to_check)
+                        
+                        Month_start_array = pandas.date_range(start=firstNight, end=checkOut, freq='MS')
+                        #Breaks = len(Month_start_array)-1 ORIGINAL (CHECKING ISSUES)
+                        Breaks = len(Month_start_array)
+                        print("Breaks: " + str(Breaks))
+                        
+                        if firstNight.split("-")[1] == lastNight.split("-")[1]:
+                            Breaks = 0
+                            print("0 Breaks")
+                        
+                        # if checkOut.split("-")[2] == "01":
+                        #     Breaks = len(Month_start_array)-1
+                        #     #nights = nights - 1
+                        # else:
+                        #     Breaks = len(Month_start_array)
+                        
+                        ############## No breaks
+                        
+                        if Breaks <= 0:
+                            
+                            BookId_2 = bookId + "_0"
+                            Status = "Normal"
+                            Date_break_1_startMonth_stringfy = firstNight
+                            Date_break_1_restMonth_stringfy =  checkOut
+                            Nights_month2 = nights
+                            Cleanning_fee_break2 = Cleanning_fee
+                            Comission_break2 = commission
+                            Tax_break = tax
+                            taxa_ocupacao = round(nights/Number_days_thisMonth, 2)
+                            
+                            if tax == 0:
+                                price_break = price - Cleanning_fee
+                            else:
+                                price_break = price
+                            
+                            ROW_fractions = [
+
+                            Apartamento,
+                            bookId,
+                            BookId_2,
+                            Status,
+                            Date_break_1_startMonth_stringfy,
+                            Date_break_1_restMonth_stringfy,
+                            nights,
+                            Nights_month2,
+                            price,
+                            price_break,
+                            Cleanning_fee,
+                            Cleanning_fee_break2,
+                            commission,
+                            Comission_break2,
+                            tax,
+                            tax,
+                            bookingTime,
+                            guestFirstName,
+                            guestName,
+                            taxa_ocupacao,
+                            status,
+                            refererEditable,
+                            apiReference
+
+
+                            ]
+                            
+                            FRACTIONS_POST.append(ROW_fractions)
+                            
+                            #print("New reservation in fractions- " + Apartamento + " - " + firstNight)
+                            #sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="fractions_test!A2", valueInputOption="RAW", body={"values":[ROW_fractions]}).execute()
+                            #time.sleep (1)
+                            
+                            ###### MOLONI APPEND
+                            
+                            #if price == 0:
+                               #continue
+                            
+                            #if bookId in moloni_list:
+                                #print(bookId + " already in moloni list")
+                                #continue
+                            
+                            #print("New reservation in Moloni - " + Apartamento + " - " + firstNight)
+                            #sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Moloni!A2", valueInputOption="RAW", body={"values":[ROW_fractions]}).execute()
+                            #ime.sleep (1)
+                            
+                            
+                            
+                        ################## WITH BREAKS
+                        
+                        else:
+                            
+                            #nights = nights - 1
+                            
+                            firstNight_parsed = firstNight.split("-")
+                            lastNight_parsed = lastNight.split("-")
+
+                            #checkIn = date(int(firstNight_parsed[0]), int(firstNight_parsed[1]), int(firstNight_parsed[2]))
+                            #checkOut = str(date(int(lastNight_parsed[0]), int(lastNight_parsed[1]), int(lastNight_parsed[2])) + timedelta(days=1))
+                            #print(checkOut)
+
+                            #nights = ((date(int(lastNight_parsed[0]), int(lastNight_parsed[1]), int(lastNight_parsed[2])) + timedelta(days=1)) - checkIn).days
+                            #print("Nights " + str(nights))
+
+                            array = pandas.date_range(start=firstNight, end=checkOut, freq='MS')
+
+                            checkIn_array = []
+                            checkOut_array = []
+                            nights_array = []
+
+                            for i in array:
+                                checkIn_array.append(i.strftime('%Y-%m-%d'))
+                                checkOut_array.append(i.strftime('%Y-%m-%d'))
+                                nights_array.append(i.strftime('%Y-%m-%d'))
+
+                            print(checkIn_array)
+                            print(checkOut_array)
+
+                            checkIn_array.insert(0,firstNight)
+                            print(checkIn_array)
+
+                            checkOut_array.append(checkOut)
+                            print(checkOut_array)
+
+                            nights_array.insert(0,firstNight)
+                            nights_array.pop(-1)
+                            nights_array.append(checkOut)
+                            print(nights_array)
+
+                            list_nights = []
+
+                            #for z in nights_array:
+                            for index, z in enumerate(nights_array):
+                                                                
+                                Year_to_check = z.split("-")[0]
+                                Month_to_check = z.split("-")[1]
+                                Day_to_check = z.split("-")[2]
+
+                                Number_days_thisMonth = calendar.monthrange(int(Year_to_check), int(Month_to_check))[1]
+                                Days_to_EndMonth = Number_days_thisMonth - int(Day_to_check)
+                                #Days_to_EndMonth = Number_days_thisMonth
+                                print(Days_to_EndMonth + 1)
+                                if index == 0:
+                                    list_nights.append(Days_to_EndMonth)
+                                else:
+                                    list_nights.append(Days_to_EndMonth+1)
+
+                            list_nights.pop(-1)
+                            list_nights.append(int(checkOut.split("-")[2])-1)
+
+                            print(list_nights)    
+                            
+                            
+                            
+                            #for f in list_checkins:
+                            for index, f in enumerate(list_nights):
+                                
+                                #Nights_to_count = list_nights[index]
+                                Nights_to_count = f
+                                
+                                if tax == 0:
+                                    price_break = price - Cleanning_fee
+                                else:
+                                    price_break = price
+
+                                Status = "Dividido"
+                                BookId_2 = bookId + "_" + str(index)
+                                Date_break_1_startMonth_stringfy = checkIn_array[index]
+                                Date_break_1_restMonth_stringfy =  checkOut_array[index]
+                                Nights_month2 = Nights_to_count
+                                
+                                if Nights_month2 == 0:
+                                    Nights_month2 = 1
+                                
+                                parsed_in = checkIn_array[index].split("-")
+                                parsed_out = checkOut_array[index].split("-")
+                                Nights_month2 = ((date(int(parsed_out[0]), int(parsed_out[1]), int(parsed_out[2]))) - (date(int(parsed_in[0]), int(parsed_in[1]), int(parsed_in[2])))).days
+                                
+                                #if index == 0:
+                                    #Nights_month2 = Nights_month2 + 1
+                                
+                                Price_break2 = round((price_break/nights) * Nights_month2,2)
+                                Cleanning_fee_break2 = round((Cleanning_fee/nights) * Nights_month2,2)
+                                Comission_break2 = round((commission/nights) * Nights_month2,2)
+                                Tax_break = round((tax/nights) * Nights_month2, 2)
+                                taxa_ocupacao = round(Nights_month2/Number_days_thisMonth,2)
+                                
+                                if checkIn_array[index] == checkOut_array[index]:
+                                    continue
+                                
+                                
+
+                                # if price == 0:
+                                #     Price_break2 = 0
+                                # if Price_break2 < 0:
+                                #     Price_break2 = 0
+
+                            #     # Month_to_check = new Date(Check_in_array[x]).getMonth()+1
+                                
+                            
+                                
+                                ROW_fractions = [
+
+                                Apartamento,
+                                bookId,
+                                BookId_2,
+                                Status,
+                                Date_break_1_startMonth_stringfy,
+                                Date_break_1_restMonth_stringfy,
+                                nights,
+                                Nights_month2,
+                                price,
+                                Price_break2,
+                                Cleanning_fee,
+                                Cleanning_fee_break2,
+                                commission,
+                                Comission_break2,
+                                tax,
+                                tax,
+                                bookingTime,
+                                guestFirstName,
+                                guestName,
+                                taxa_ocupacao,
+                                status,
+                                refererEditable,
+                                apiReference
+                            
+
+                                ]
+                                
+                                FRACTIONS_POST.append(ROW_fractions)
+                            
+                                #print("New reservation in fractions- " + Apartamento + " - " + firstNight)
+                                #sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="fractions_test!A2", valueInputOption="RAW", body={"values":[ROW_fractions]}).execute()
+                                #time.sleep (1)
+                                
+                                
+                                
+                                ###### MOLONI APPEND
+                            
+                                #if price == 0:
+                                    #continue
+                            
+                                #print("New reservation in Moloni - " + Apartamento + " - " + firstNight)
+                                #sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Moloni!A2", valueInputOption="RAW", body={"values":[ROW_fractions]}).execute()
+                                #time.sleep (1)
+                
+                except Exception as e: 
+                    print("ERROR 1")
+                    print(e)
+                
+    #print("New reservation - " + Apartamento + " - " + firstNight)
+    
+    ################## POST BOOKINGS
+    
+    request_delete_row_bookings = {"requests":[{"deleteDimension": {"range": {"sheetId": 790384871,"dimension": "ROWS","startIndex": 1,"endIndex": 10000}}}]}
+    service.spreadsheets().batchUpdate(body=request_delete_row_bookings, spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
+    
+    sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Booking_test!A2", valueInputOption="RAW", body={"values":BOOKING_POST}).execute()
+    time.sleep (1)
+    
+    ################## POST CANCELAMENTOS
+    
+    request_delete_row_cancel = {"requests":[{"deleteDimension": {"range": {"sheetId": 2010800497,"dimension": "ROWS","startIndex": 1,"endIndex": 10000}}}]}
+    service.spreadsheets().batchUpdate(body=request_delete_row_cancel, spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
+    
+    sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="Cancelamentos_test!A2", valueInputOption="RAW", body={"values":CANCELAMENTOS_POST}).execute()
+    time.sleep (1)
+    
+    ################# POST FRACTIONS
+    
+    request_delete_row_fractions = {"requests":[{"deleteDimension": {"range": {"sheetId": 1441773721,"dimension": "ROWS","startIndex": 1,"endIndex": 10000}}}]}
+    service.spreadsheets().batchUpdate(body=request_delete_row_fractions, spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
+    
+    sheet.append(spreadsheetId=SAMPLE_SPREADSHEET_ID,range="fractions_test!A2", valueInputOption="RAW", body={"values":FRACTIONS_POST}).execute()
+    time.sleep (1)                   
+    
+    
+#############################################################################  FUNCTIONS        
+           
+             
+Beds24Bookings()
+
+###########################################
+
+
+
